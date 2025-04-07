@@ -4,7 +4,7 @@ import logging
 import azure.functions as func
 import json
 import os
-from azure.storage.blob import BlobServiceClient
+import traceback
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -39,28 +39,50 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         env_var_names = list(os.environ.keys())
         logger.info(f"Available environment variables: {env_var_names}")
         
-        # Try to list blobs from Azure Storage
+        # Try to list blobs from Azure Storage - isolate each step
         image_blobs = []
+        error_details = {}
+        
         try:
-            # Get connection string from environment
+            # Step 1: Get connection string
             connection_string = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
+            if not connection_string:
+                error_details["step1"] = "Connection string not found"
+                raise ValueError("AZURE_STORAGE_CONNECTION_STRING not found in environment")
             
-            if connection_string:
-                logger.info("Found AZURE_STORAGE_CONNECTION_STRING, attempting to list blobs")
-                
-                # Create blob service client and container client
+            # Step 2: Create BlobServiceClient
+            try:
+                from azure.storage.blob import BlobServiceClient
                 blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+                logger.info("Successfully created BlobServiceClient")
+            except Exception as e:
+                error_details["step2"] = f"Error creating BlobServiceClient: {str(e)}"
+                raise
+            
+            # Step 3: Create ContainerClient
+            try:
                 container_client = blob_service_client.get_container_client(container_name)
-                
-                # List blobs with optional prefix
+                logger.info(f"Successfully created ContainerClient for {container_name}")
+            except Exception as e:
+                error_details["step3"] = f"Error creating ContainerClient: {str(e)}"
+                raise
+            
+            # Step 4: List blobs
+            try:
                 if images_path:
                     logger.info(f"Listing blobs with prefix: {images_path}")
-                    blobs = container_client.list_blobs(name_starts_with=images_path)
+                    blobs = list(container_client.list_blobs(name_starts_with=images_path))
                 else:
                     logger.info("Listing all blobs in container")
-                    blobs = container_client.list_blobs()
+                    blobs = list(container_client.list_blobs())
                 
-                # Filter for image files
+                logger.info(f"Successfully listed {len(blobs)} blobs")
+            except Exception as e:
+                error_details["step4"] = f"Error listing blobs: {str(e)}"
+                raise
+            
+            # Step 5: Filter for image files
+            try:
                 for blob in blobs:
                     blob_name = blob.name
                     logger.info(f"Found blob: {blob_name}")
@@ -68,36 +90,43 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                         image_blobs.append(blob_name)
                 
                 logger.info(f"Found {len(image_blobs)} images in Azure container '{container_name}'")
-            else:
-                logger.error("AZURE_STORAGE_CONNECTION_STRING not found in environment")
+            except Exception as e:
+                error_details["step5"] = f"Error filtering blobs: {str(e)}"
+                raise
+            
         except Exception as e:
-            logger.error(f"Error listing blobs: {str(e)}")
-            import traceback
-            logger.error(f"Traceback: {traceback.format_exc()}")
+            logger.error(f"Error in blob operations: {str(e)}")
+            tb = traceback.format_exc()
+            logger.error(f"Traceback: {tb}")
+            error_details["traceback"] = tb
         
-        # Return response with images array
+        # Return response with images array and any error details
         return func.HttpResponse(
             json.dumps({
-                "status": "success",
-                "message": f"Found {len(image_blobs)} images",
+                "status": "success" if not error_details else "error",
+                "message": f"Found {len(image_blobs)} images" if not error_details else "Error listing blobs",
                 "images": image_blobs,
                 "container": container_name,
                 "environment_check": {
                     **env_var_status,
                     "all_env_vars": env_var_names
-                }
+                },
+                "error_details": error_details
             }),
             mimetype="application/json",
-            status_code=200
+            status_code=200  # Always return 200 to see the response
         )
 
     except Exception as e:
         logger.error(f"Error in GetImages function: {str(e)}")
-        import traceback
         tb = traceback.format_exc()
         logger.error(f"Traceback: {tb}")
         return func.HttpResponse(
-            json.dumps({"error": str(e), "traceback": tb}),
+            json.dumps({
+                "error": str(e), 
+                "traceback": tb,
+                "status": "error"
+            }),
             mimetype="application/json",
-            status_code=500
+            status_code=200  # Return 200 instead of 500 to see the error details
         )

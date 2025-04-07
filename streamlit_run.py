@@ -28,14 +28,15 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 # After load_dotenv()
 # Hardcode the correct URLs with /api/ path
-AZURE_FUNCTION_URL_IMAGES = 'http://localhost:7071/api/GetImages'
-AZURE_FUNCTION_URL_PREDICTION = 'http://localhost:7071/api/GetPrediction'
-print(f"Loaded environment variables: AZURE_FUNCTION_URL_IMAGES={AZURE_FUNCTION_URL_IMAGES}")
+# AZURE_FUNCTION_URL_IMAGES = 'http://localhost:7071/api/GetImages'
+# AZURE_FUNCTION_URL_PREDICTION = 'http://localhost:7071/api/GetPrediction'
+# print(f"Loaded environment variables: AZURE_FUNCTION_URL_IMAGES={AZURE_FUNCTION_URL_IMAGES}")
 # Azure Function URLs - Use environment variables if available, otherwise default to localhost:7071
 # Force HTTP for local development to avoid SSL errors
 # AZURE_FUNCTION_URL_IMAGES = os.environ.get("AZURE_FUNCTION_URL_IMAGES", 'http://localhost:7071/api/GetImages')
 # AZURE_FUNCTION_URL_PREDICTION = os.environ.get("AZURE_FUNCTION_URL_PREDICTION", 'http://localhost:7071/api/GetPrediction')
-
+AZURE_FUNCTION_URL_IMAGES = "https://ocp8azurefunctions.azurewebsites.net/api/GetImages"
+AZURE_FUNCTION_URL_PREDICTION = "https://ocp8azurefunctions.azurewebsites.net/api/GetPrediction"
 # Force HTTP for localhost connections to prevent SSL errors
 if 'localhost' in AZURE_FUNCTION_URL_IMAGES and AZURE_FUNCTION_URL_IMAGES.startswith('https'):
     AZURE_FUNCTION_URL_IMAGES = AZURE_FUNCTION_URL_IMAGES.replace('https://', 'http://')

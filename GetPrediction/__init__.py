@@ -46,37 +46,6 @@ if str(project_root) not in sys.path:
 # Import our improved utility functions
 from utils.azure_utils import download_blob, list_blobs, download_blob_to_memory
 
-# Try different import paths
-# try:
-#     # First try the local import if azure_utils.py is in the same directory
-#     try:
-#         from . import azure_utils
-#         list_blobs = azure_utils.list_blobs
-#         download_blob = azure_utils.download_blob
-#         download_blob_to_memory = azure_utils.download_blob_to_memory
-#         logging.info("Successfully imported from local azure_utils")
-#     except (ImportError, AttributeError) as e:
-#         logging.error(f"Failed to import from local azure_utils: {str(e)}")
-#         raise ImportError("Local import failed")
-# except ImportError:
-#     try:
-#         # Try from src
-#         from src.utils.azure_utils import download_blob, list_blobs, download_blob_to_memory
-#         logging.info("Successfully imported from src.utils.azure_utils")
-#     except ImportError as e:
-#         logging.error(f"Failed to import from src.utils.azure_utils: {str(e)}")
-#         try:
-#             # Try direct import
-#             import azure_utils
-#             list_blobs = azure_utils.list_blobs
-#             download_blob = azure_utils.download_blob
-#             download_blob_to_memory = azure_utils.download_blob_to_memory
-#             logging.info("Successfully imported directly from azure_utils")
-#         except ImportError as e:
-#             logging.error(f"All import attempts failed: {str(e)}")
-#             raise ImportError("Could not import from any location")
-
-
 def is_image_in_range(img_array):
     return np.all((img_array >= -0.01) & (img_array <= 1.01))
 

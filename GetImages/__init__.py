@@ -4,7 +4,6 @@ import logging
 import azure.functions as func
 import json
 import os
-from azure.storage.blob import BlobServiceClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -16,60 +15,36 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     try:
         # Get container name from request or use default
         container_name = req.params.get('container_name')
-        images_path = req.params.get('images_path')
-        
-        # Log the parameters for debugging
-        logger.info(f"Request parameters: container_name={container_name}, images_path={images_path}")
-        
         if not container_name:
-            # Check if AZURE_IMAGES_CONTAINER_NAME is set
             container_name = os.environ.get("AZURE_IMAGES_CONTAINER_NAME", "images1")
-            logger.info(f"Using default container name: {container_name}")
         
-        logger.info(f"Using container: {container_name}")
+        # Check for environment variables
+        connection_string_exists = "AZURE_STORAGE_CONNECTION_STRING" in os.environ
+        account_name_exists = "AZURE_STORAGE_ACCOUNT" in os.environ
+        container_name_exists = "AZURE_IMAGES_CONTAINER_NAME" in os.environ
         
-        # Try to list blobs from Azure Storage
-        image_blobs = []
-        try:
-            # Get connection string from environment
-            connection_string = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
-            if connection_string:
-                logger.info("Found AZURE_STORAGE_CONNECTION_STRING in environment")
-                
-                # Create blob service client and container client
-                blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-                container_client = blob_service_client.get_container_client(container_name)
-                
-                # List blobs with optional prefix
-                if images_path:
-                    blobs = container_client.list_blobs(name_starts_with=images_path)
-                else:
-                    blobs = container_client.list_blobs()
-                
-                # Filter for image files
-                for blob in blobs:
-                    blob_name = blob.name
-                    if blob_name.lower().endswith(('.png', '.jpg', '.jpeg')):
-                        if ('_leftImg8bit' in blob_name or 
-                            '/images/' in blob_name.lower() or 
-                            blob_name.startswith('images/')):
-                            image_blobs.append(blob_name)
-                
-                logger.info(f"Found {len(image_blobs)} images in Azure container '{container_name}'")
-            else:
-                logger.error("AZURE_STORAGE_CONNECTION_STRING not found in environment")
-        except Exception as e:
-            logger.error(f"Error listing blobs: {str(e)}")
-            import traceback
-            logger.error(f"Traceback: {traceback.format_exc()}")
+        # Log environment variable status
+        logger.info(f"Environment check: AZURE_STORAGE_CONNECTION_STRING exists: {connection_string_exists}")
+        logger.info(f"Environment check: AZURE_STORAGE_ACCOUNT exists: {account_name_exists}")
+        logger.info(f"Environment check: AZURE_IMAGES_CONTAINER_NAME exists: {container_name_exists}")
         
-        # Return response with images array
+        # Get all environment variable names (without values for security)
+        env_var_names = list(os.environ.keys())
+        logger.info(f"Available environment variables: {env_var_names}")
+        
+        # Return response with environment check
         return func.HttpResponse(
             json.dumps({
                 "status": "success",
-                "message": f"Found {len(image_blobs)} images",
-                "images": image_blobs,
-                "container": container_name
+                "message": "Environment check completed",
+                "images": [],
+                "container": container_name,
+                "environment_check": {
+                    "AZURE_STORAGE_CONNECTION_STRING": connection_string_exists,
+                    "AZURE_STORAGE_ACCOUNT": account_name_exists,
+                    "AZURE_IMAGES_CONTAINER_NAME": container_name_exists,
+                    "all_env_vars": env_var_names
+                }
             }),
             mimetype="application/json",
             status_code=200

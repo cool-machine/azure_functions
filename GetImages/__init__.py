@@ -12,11 +12,13 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logger.info('Python HTTP trigger function processed a request to get images.')
     
     try:
-        # Return a simple success message
+        # Return a simple success message with empty images array
         return func.HttpResponse(
             json.dumps({
                 "status": "success",
-                "message": "Minimal GetImages function is running"
+                "message": "Minimal GetImages function is running",
+                "images": [],
+                "container": "images1"
             }),
             mimetype="application/json",
             status_code=200

@@ -13,6 +13,7 @@ local.settings.json
 __pycache__/
 
 **/*pyc*
+**/*azurite*
 
 .env/
 .env

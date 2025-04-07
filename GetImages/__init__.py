@@ -9,6 +9,10 @@ import os
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def check_environment_variables(variables):
+    """Check if environment variables exist"""
+    return {var: var in os.environ for var in variables}
+
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logger.info('Python HTTP trigger function processed a request to get images.')
     
@@ -19,14 +23,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             container_name = os.environ.get("AZURE_IMAGES_CONTAINER_NAME", "images1")
         
         # Check for environment variables
-        connection_string_exists = "AZURE_STORAGE_CONNECTION_STRING" in os.environ
-        account_name_exists = "AZURE_STORAGE_ACCOUNT" in os.environ
-        container_name_exists = "AZURE_IMAGES_CONTAINER_NAME" in os.environ
+        env_vars_to_check = ["AZURE_STORAGE_CONNECTION_STRING", "AZURE_STORAGE_ACCOUNT", "AZURE_IMAGES_CONTAINER_NAME"]
+        env_var_status = check_environment_variables(env_vars_to_check)
         
         # Log environment variable status
-        logger.info(f"Environment check: AZURE_STORAGE_CONNECTION_STRING exists: {connection_string_exists}")
-        logger.info(f"Environment check: AZURE_STORAGE_ACCOUNT exists: {account_name_exists}")
-        logger.info(f"Environment check: AZURE_IMAGES_CONTAINER_NAME exists: {container_name_exists}")
+        for var, exists in env_var_status.items():
+            logger.info(f"Environment check: {var} exists: {exists}")
         
         # Get all environment variable names (without values for security)
         env_var_names = list(os.environ.keys())
@@ -40,9 +42,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 "images": [],
                 "container": container_name,
                 "environment_check": {
-                    "AZURE_STORAGE_CONNECTION_STRING": connection_string_exists,
-                    "AZURE_STORAGE_ACCOUNT": account_name_exists,
-                    "AZURE_IMAGES_CONTAINER_NAME": container_name_exists,
+                    **env_var_status,
                     "all_env_vars": env_var_names
                 }
             }),

@@ -99,7 +99,13 @@ def get_images():
         
         if response.status_code == 200:
             logger.info(f"Successfully retrieved images")
-            return response.json()
+            response_data = response.json()
+            
+            # Display the full response for debugging
+            with st.expander("Debug: GetImages Response"):
+                st.json(response_data)
+                
+            return response_data
         else:
             error_msg = f"Error getting images: {response.status_code} - {response.text}"
             logger.error(error_msg)

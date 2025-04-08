@@ -94,7 +94,7 @@ def get_images():
                 "images_path": AZURE_IMAGES_PATH,
                 "masks_path": AZURE_MASKS_PATH,
             },
-            timeout=30  # Add timeout to prevent hanging requests
+            timeout=90  # Add timeout to prevent hanging requests
         )
         
         if response.status_code == 200:
@@ -137,7 +137,7 @@ def get_prediction(image_path):
                 "image_container": AZURE_IMAGES_CONTAINER,
                 "model_container": AZURE_MODELS_CONTAINER,
             },
-            timeout=60  # Add timeout for longer prediction operations
+            timeout=90  # Add timeout for longer prediction operations
         )
         if response.status_code == 200:
             logger.info(f"Successfully received prediction")

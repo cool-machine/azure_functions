@@ -16,6 +16,10 @@ jobs:
       id-token: write
       contents: read
 
+    env:
+      ENABLE_ORYX_BUILD: true
+      SCM_DO_BUILD_DURING_DEPLOYMENT: true
+
     steps:
       - uses: actions/checkout@v4
 
@@ -40,6 +44,3 @@ jobs:
           app-name: 'ocp8azurefunctions'
           slot-name: 'Production'
           package: '.'
-    env:
-      ENABLE_ORYX_BUILD: true
-      SCM_DO_BUILD_DURING_DEPLOYMENT: true

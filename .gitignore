@@ -6,6 +6,7 @@ local.settings.json
 **/*local.settings.json*
 **/*host.json*
 
+
 **/*aml*
 !streamlit_run.py
 

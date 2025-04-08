@@ -45,6 +45,10 @@ jobs:
           test -f requirements.txt && echo "✅ requirements.txt FOUND" || echo "❌ requirements.txt MISSING"
           echo "::endgroup::"
 
+          echo "::group::requirements.txt contents"
+          cat requirements.txt || echo "❌ requirements.txt is missing!"
+          echo "::endgroup::"
+          
       - name: Azure Login
         uses: azure/login@v2
         with:

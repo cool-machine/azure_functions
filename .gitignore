@@ -1,5 +1,6 @@
 fresh-env
 
+
 .DS_Store
 host.json
 local.settings.json

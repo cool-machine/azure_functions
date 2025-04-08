@@ -62,5 +62,5 @@ jobs:
           app-name: 'ocp8azurefunctions'
           slot-name: 'Production'
           package: '.'
-          run: |
+      
 

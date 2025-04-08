@@ -1,7 +1,7 @@
 fresh-env
 
 .DS_Store
-host.json
+# host.json
 local.settings.json
 **/*local.settings.json*
 **/*host.json*
@@ -22,4 +22,5 @@ __pycache__/
 .vscode*
 .vscode/
 
+!host.json
 !requirements.txt

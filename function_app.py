@@ -27,6 +27,7 @@ def check_environment_variables(variables):
     """Check if environment variables exist"""
     return {var: var in os.environ for var in variables}
 
+@app.function_name("GetImages")
 @app.route(route="GetImages", auth_level=func.AuthLevel.ANONYMOUS, methods=["GET"])
 def get_images(req: func.HttpRequest) -> func.HttpResponse:
     logger.info('Python HTTP trigger function processed a request to get images.')
@@ -145,6 +146,7 @@ def get_images(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 # GetPrediction function definition
+@app.function_name("GetPrediction")
 @app.route(route="GetPrediction", auth_level=func.AuthLevel.ANONYMOUS, methods=["POST"])
 def get_prediction(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request to get predictions.')
@@ -367,6 +369,7 @@ def get_prediction(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 # Health check function
+@app.function_name("HealthCheck")
 @app.route(route="HealthCheck", auth_level=func.AuthLevel.ANONYMOUS, methods=["GET"])
 def health_check(req: func.HttpRequest) -> func.HttpResponse:
     """

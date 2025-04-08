@@ -1,4 +1,3 @@
-# api/GetPrediction
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices=false'
@@ -25,15 +24,10 @@ from typing import Optional, Any, Union
 # Set matplotlib backend to Agg (non-interactive) before importing pyplot
 import matplotlib.pyplot as plt
 import matplotlib
-
-from transformers import TFSegformerForSemanticSegmentation, SegformerConfig
-
-
-
 matplotlib.use('Agg')
 
+from transformers import TFSegformerForSemanticSegmentation, SegformerConfig
 from pathlib import Path
-
 
 # Add project root to path
 script_path = Path(__file__).resolve()
@@ -42,14 +36,14 @@ project_root = script_path.parent.parent  # Now points directly to root director
 if str(project_root) not in sys.path:
     sys.path.append(str(project_root))
 
-
 # Import our improved utility functions
 from utils.azure_utils import download_blob, list_blobs, download_blob_to_memory
 
+# Create the FunctionApp instance
+app = func.FunctionApp()
+
 def is_image_in_range(img_array):
     return np.all((img_array >= -0.01) & (img_array <= 1.01))
-
-
 
 # Assume image is a numpy array of shape (H, W, C)
 def encode_image_to_png_bytes(image):
@@ -119,12 +113,7 @@ def load_image(image_source: Union[str, bytes],
     except Exception as e:
         logging.error(f"Error downloading blob: {str(e)}")
         return None
- 
 
-
-
-# Import our improved utility functions
-# from src.inference.deployment_helpers import load_model, load_image, create_colored_mask
 # Singleton model cache
 _MODEL_CACHE = {}
 
@@ -221,7 +210,6 @@ def load_model_path(model_path: Optional[str] = None,
     logging.info("Model loaded and cached successfully")    
     return model_path
 
-
 def prepare_inference_data(image_path, mask_path, image_container):
     """
     Prepare image and mask for inference using the same preprocessing as training
@@ -289,18 +277,14 @@ def prepare_inference_data(image_path, mask_path, image_container):
     label = tf.image.convert_image_dtype(original_mask, tf.uint8)
     label.set_shape([1024, 2048, 1])
 
-
     original_classes, class_mapping, new_labels = retrieve_mask_mappings()
     label = map_labels_tf(label, original_classes, class_mapping, new_labels)
-
 
     image, label = normalize(image, label)
 
     image, label = resize_images(image, label)
     logging.info(f"Resized image shape: {image.shape}, resized label shape: {label.shape}")
     return image, label
-
-
 
 # Define standard colors for segmentation masks
 CATEGORY_COLORS = {
@@ -314,8 +298,8 @@ CATEGORY_COLORS = {
     7: [255, 165, 0],    # Orange
 }
 
-
-def main(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(route="GetPrediction", auth_level=func.AuthLevel.ANONYMOUS, methods=["POST"])
+def get_prediction(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request to get predictions.')
     
     # Configure logging to be more verbose
@@ -352,12 +336,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         logging.info(f"Using model container: {model_container}")
         logging.info(f"Using model path: {model_path}")
         
-        
         # Get corresponding mask path
         # image_tensor = None
         mask_path = None
         mask_tensor = None
-
         
         # Get mask path from environment variable
         azure_masks_path = os.environ.get("AZURE_MASKS_PATH", "masks")
@@ -416,7 +398,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         logging.info(f"Input image shape just before inputting image: {image_tensor.shape}")
         
-        
         # Reshape the tensor to match the expected input format for SegFormer
         if len(image_tensor.shape) == 3:
             # Log original shape for debugging
@@ -432,7 +413,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             image_tensor = tf.expand_dims(image_tensor, axis=0)
             logging.info(f"Final tensor shape after adding batch dimension: {image_tensor.shape}")
         
-        
         image_tensor = tf.cast(image_tensor, tf.float32)
         # Create a new configuration
         config = SegformerConfig(
@@ -446,27 +426,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                                                                    config=config,
                                                                    ignore_mismatched_sizes=True)
         
-         
         output_mask = model(image_tensor).logits
 
-
-
-
-
-
-
         logging.info(f"Output mask shape after logits: {output_mask.shape}")
-        
-        # logging.info(f"Raw logits min: {tf.reduce_min(output_mask)}, max: {tf.reduce_max(output_mask)}, mean: {tf.reduce_mean(output_mask)}")
-
-        # unique_values, _, counts = tf.unique_with_counts(tf.reshape(output_mask, [-1]))
-        # logging.info(f"Unique prediction values: {unique_values.numpy()}, counts: {counts.numpy()}")
 
         image_tensor = tf.transpose(image_tensor, perm=[0, 2, 3, 1]) 
         logging.info(f"Image tensor shape after transpose: {image_tensor.shape}")
         image_tensor = tf.squeeze(image_tensor, axis=0)
         logging.info(f"Image tensor shape after squeeze: {image_tensor.shape}")        
-
 
         if is_image_in_range(image_tensor):
             image_tensor = tf.cast(image_tensor * 255, tf.uint8)
@@ -474,8 +441,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             image_tensor = tf.cast(image_tensor, tf.uint8)
         
         logging.info(f"Image tensor shape after cast: {image_tensor.shape}")
-
-        # logging.info(f"Output mask shape just after ouptutting from model: {output_mask.shape}")
 
         output_mask = tf.transpose(output_mask, perm=[0, 2, 3, 1])
 
@@ -488,13 +453,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         
         logging.info(f"Output mask after argmax: min: {tf.reduce_min(output_mask)}, max: {tf.reduce_max(output_mask)}, mean: {tf.reduce_mean(output_mask)}")
         
-        # logging.info(f"Output mask shape after argmax: {output_mask.shape}")
-
         output_mask = tf.transpose(output_mask, perm=[1, 2, 0])
         
         logging.info(f"Output mask shape after transpose: {output_mask.shape}")
-
-        # output_mask = tf.image.convert_image_dtype(output_mask, tf.uint8)
 
         logging.info(f"Output mask shape after convert_image_dtype: {output_mask.shape}")
 

@@ -1,20 +1,22 @@
-# GetImages/__init__.py
-
-import logging
 import azure.functions as func
+import logging
 import json
 import os
 import traceback
+from azure.storage.blob import BlobServiceClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+app = func.FunctionApp()
+
 def check_environment_variables(variables):
     """Check if environment variables exist"""
     return {var: var in os.environ for var in variables}
 
-def main(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(route="GetImages", auth_level=func.AuthLevel.ANONYMOUS, methods=["GET"])
+def get_images(req: func.HttpRequest) -> func.HttpResponse:
     logger.info('Python HTTP trigger function processed a request to get images.')
     
     try:
@@ -52,7 +54,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             
             # Step 2: Create BlobServiceClient
             try:
-                from azure.storage.blob import BlobServiceClient
                 blob_service_client = BlobServiceClient.from_connection_string(connection_string)
                 logger.info("Successfully created BlobServiceClient")
             except Exception as e:

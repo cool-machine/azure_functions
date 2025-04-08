@@ -40,8 +40,9 @@ jobs:
           echo "::group::Listing project structure"
           find . -type f
           echo "::endgroup::"
-          echo "::group::requirements.txt contents"
-          cat requirements.txt || echo "❌ requirements.txt is missing!"
+          
+          echo "::group::Check for requirements.txt"
+          test -f requirements.txt && echo "✅ requirements.txt FOUND" || echo "❌ requirements.txt MISSING"
           echo "::endgroup::"
 
       - name: Azure Login
@@ -57,3 +58,5 @@ jobs:
           app-name: 'ocp8azurefunctions'
           slot-name: 'Production'
           package: '.'
+          run: |
+

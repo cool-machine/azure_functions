@@ -21,3 +21,5 @@ __pycache__/
 .python_packages
 .vscode*
 .vscode/
+
+!requirements.txt

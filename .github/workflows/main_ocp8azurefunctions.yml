@@ -29,18 +29,12 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install dependencies (optional check)
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install -r requirements.txt
-
       - name: Debug deployment structure
         run: |
           echo "::group::Listing project structure"
           find . -type f
           echo "::endgroup::"
-          
+
           echo "::group::Check for requirements.txt"
           test -f requirements.txt && echo "✅ requirements.txt FOUND" || echo "❌ requirements.txt MISSING"
           echo "::endgroup::"
@@ -48,7 +42,7 @@ jobs:
           echo "::group::requirements.txt contents"
           cat requirements.txt || echo "❌ requirements.txt is missing!"
           echo "::endgroup::"
-          
+
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -62,5 +56,3 @@ jobs:
           app-name: 'ocp8azurefunctions'
           slot-name: 'Production'
           package: '.'
-      
-

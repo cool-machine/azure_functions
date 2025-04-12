@@ -1,0 +1,1 @@
+streamlit run streamlit_run.py --server.port 8000 --server.address 0.0.0.0
